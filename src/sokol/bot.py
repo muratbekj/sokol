@@ -23,7 +23,7 @@ from .ats import Score, Scorer
 from .config import Config
 from .jd_fetcher import FetchFailed, fetch_job_description
 from .knowledge import Knowledge, load_knowledge
-from .latex import CompileFailed, compile_latex, strip_latex
+from .latex import CompileFailed, compile_latex, restore_preamble, strip_latex
 from .pdf import render_pdf
 from .tailor import JobAnalysis, Tailor
 
@@ -229,6 +229,11 @@ class SokolBot:
                 self.scorer.score, plain(tailored_src), jd_text, analysis.keywords
             )
 
+        # The model must not touch the preamble, but small models drop packages
+        # from it anyway — enforce the rule instead of trusting it.
+        if knowledge.resume_format == "latex":
+            tailored_src = restore_preamble(tailored_src, knowledge.resume_src)
+
         await self._status(update, "Rendering the PDF…")
         stamp = time.strftime("%Y%m%d-%H%M%S")
         base = self.config.output_dir / f"{_slug(analysis.summary_line())}-{stamp}"
@@ -262,6 +267,7 @@ class SokolBot:
                 update, "LaTeX compile failed — asking the model to repair it…"
             )
             fixed = await asyncio.to_thread(self.tailor.fix_latex, tailored_src, str(exc))
+            fixed = restore_preamble(fixed, knowledge.resume_src)
             src_path.write_text(fixed, encoding="utf-8")
             try:
                 return await asyncio.to_thread(compile_latex, fixed, pdf_path)
@@ -272,7 +278,7 @@ class SokolBot:
                     caption=(
                         "Couldn't get the tailored LaTeX to compile even after a "
                         "repair pass — here's the .tex to fix by hand.\n\n"
-                        f"Last error:\n{str(exc2)[:800]}"
+                        f"Last error:\n{str(exc2)[-800:]}"
                     ),
                 )
                 return None

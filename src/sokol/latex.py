@@ -54,6 +54,21 @@ def compile_latex(tex_src: str, out_path: Path) -> Path:
     return out_path
 
 
+def restore_preamble(tex_src: str, reference_src: str) -> str:
+    """Splice the reference document's preamble onto tex_src's body.
+
+    The tailoring rules require the preamble verbatim, but small local models
+    routinely rewrite it or drop packages, which breaks the compile. The
+    reference preamble is known-good, so substituting it is always safe.
+    """
+    marker = "\\begin{document}"
+    if marker not in tex_src or marker not in reference_src:
+        return tex_src
+    preamble = reference_src.split(marker, 1)[0]
+    body = tex_src.split(marker, 1)[1]
+    return preamble + marker + body
+
+
 def strip_latex(tex_src: str) -> str:
     """Rough LaTeX-to-text for keyword/embedding scoring (not for display)."""
     # The preamble is markup, not resume content — score the body only.
