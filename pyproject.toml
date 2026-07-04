@@ -1,0 +1,22 @@
+[project]
+name = "sokol"
+version = "0.1.0"
+description = "Private Telegram bot that tailors your resume to a job posting using local Ollama models"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "markdown-it-py>=4.2.0",
+    "ollama>=0.6.2",
+    "python-dotenv>=1.2.2",
+    "python-telegram-bot>=22.8",
+    "trafilatura>=2.1.0",
+    "weasyprint>=69.0",
+]
+
+[project.scripts]
+sokol = "sokol.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.7,<1"]
+build-backend = "uv_build"
